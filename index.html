@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dibyaman Sahoo — Player Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0e14;
+    --panel:#1a1216;
+    --panel-2:#160f12;
+    --line:#332025;
+    --green:#ff3b3b;
+    --green-dim:#8a1c1c;
+    --amber:#ff8a3d;
+    --text:#f2e8e8;
+    --text-dim:#8a6b6b;
+    --radius:2px;
+    --mono: 'Space Mono', monospace;
+    --pixel: 'Press Start 2P', monospace;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--text);
+    font-family:var(--mono);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--green); color:var(--void); }
+  a{ color:inherit; text-decoration:none; }
+  :focus-visible{ outline:2px solid var(--green); outline-offset:3px; }
+
+  .xp-bar{ position:fixed; top:0; left:0; width:100%; height:4px; background:var(--panel-2); z-index:200; }
+  .xp-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--green-dim), var(--green)); box-shadow:0 0 8px var(--green); transition:width .08s linear; }
+
+  .boot-screen{ position:fixed; inset:0; background:var(--void); z-index:500; display:flex; align-items:center; justify-content:center; padding:24px; transition:opacity .6s ease, visibility .6s ease; }
+  .boot-screen.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .boot-text{ color:var(--green); font-size:13px; white-space:pre-wrap; max-width:520px; min-height:160px; }
+  .boot-cursor{ display:inline-block; width:8px; height:14px; background:var(--green); animation:blink 1s steps(1) infinite; vertical-align:middle; margin-left:2px; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  section{ padding:120px 24px; max-width:980px; margin:0 auto; }
+  .eyebrow{ font-family:var(--pixel); font-size:10px; color:var(--amber); letter-spacing:2px; margin-bottom:18px; }
+  h2{ font-family:var(--pixel); font-size:20px; color:var(--text); margin-bottom:40px; line-height:1.5; }
+  .divider{ height:1px; background:var(--line); margin:0 auto; max-width:980px; }
+
+  .hero{ min-height:100vh; display:flex; align-items:center; position:relative;
+    background: radial-gradient(circle at 20% 20%, rgba(255,59,59,0.08), transparent 40%), radial-gradient(circle at 80% 80%, rgba(255,138,61,0.06), transparent 40%); }
+  .hero-inner{ max-width:980px; margin:0 auto; padding:0 24px; width:100%; }
+  .hero h1{ font-family:var(--pixel); font-size:clamp(28px, 6vw, 52px); line-height:1.4; margin:18px 0 20px; text-shadow:0 0 24px rgba(255,59,59,0.35); }
+  .hero .tagline{ color:var(--text-dim); font-size:15px; margin-bottom:28px; max-width:520px; }
+  .hero-meta{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:34px; }
+  .tag{ border:1px solid var(--line); background:var(--panel); color:var(--text-dim); font-size:11px; padding:6px 12px; border-radius:var(--radius); }
+  .tag.live{ color:var(--green); border-color:var(--green-dim); }
+  .tag.live::before{ content:"● "; }
+
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn{ font-family:var(--pixel); font-size:11px; padding:14px 20px; border-radius:var(--radius); display:inline-block; transition:transform .15s ease, box-shadow .15s ease; }
+  .btn-primary{ background:var(--green); color:var(--void); box-shadow:0 0 0 rgba(255,59,59,0); }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,59,59,0.35); }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--green); color:var(--green); transform:translateY(-2px); }
+
+  .scroll-hint{ position:absolute; bottom:36px; left:24px; font-size:10px; color:var(--text-dim); letter-spacing:1px; }
+
+  .level-select{ position:sticky; top:4px; z-index:150; background:rgba(10,14,20,0.85); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); display:flex; gap:0; overflow-x:auto; }
+  .level-select a{ font-size:10px; font-family:var(--pixel); padding:16px 18px; white-space:nowrap; color:var(--text-dim); border-bottom:2px solid transparent; }
+  .level-select a.active{ color:var(--green); border-color:var(--green); }
+
+  .skill-groups{ display:grid; gap:28px; }
+  .skill-group-label{ font-size:11px; color:var(--amber); letter-spacing:1px; margin-bottom:14px; }
+  .skill-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px; }
+  .skill-node{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .skill-node-top{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:10px; }
+  .skill-node-top span:last-child{ color:var(--text-dim); }
+  .skill-bar{ height:6px; background:var(--panel-2); border-radius:4px; overflow:hidden; }
+  .skill-bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--green-dim),var(--green)); }
+
+  .quest-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:28px; margin-bottom:22px; }
+  .quest-head{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+  .quest-title{ font-size:16px; font-weight:700; }
+  .quest-sub{ color:var(--text-dim); font-size:12px; margin-bottom:16px; }
+  .quest-status{ font-size:10px; color:var(--green); border:1px solid var(--green-dim); padding:4px 10px; border-radius:var(--radius); height:fit-content; }
+  .quest-objectives{ list-style:none; }
+  .quest-objectives li{ font-size:13px; color:var(--text); margin-bottom:9px; padding-left:22px; position:relative; }
+  .quest-objectives li::before{ content:"✔"; position:absolute; left:0; color:var(--green); font-size:11px; }
+
+  .ach-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:16px; }
+  .ach-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; display:flex; flex-direction:column; gap:8px; transition:border-color .15s ease, transform .15s ease; }
+  .ach-card:hover{ border-color:var(--amber); transform:translateY(-3px); }
+  .ach-icon{ font-size:22px; }
+  .ach-title{ font-size:13px; font-weight:700; }
+  .ach-issuer{ font-size:11px; color:var(--text-dim); }
+  .ach-link{ font-size:10px; color:var(--amber); margin-top:6px; }
+  .ach-link::after{ content:" →"; }
+
+  .timeline{ border-left:2px solid var(--line); padding-left:24px; display:grid; gap:28px; }
+  .tl-item{ position:relative; }
+  .tl-item::before{ content:""; position:absolute; left:-31px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--void); border:2px solid var(--green); }
+  .tl-role{ font-size:14px; font-weight:700; }
+  .tl-org{ font-size:12px; color:var(--text-dim); margin-bottom:4px; }
+  .tl-time{ font-size:11px; color:var(--green); }
+
+  .continue-screen{ text-align:center; }
+  .continue-screen h2{ font-size:26px; }
+  .continue-screen p{ color:var(--text-dim); margin-bottom:34px; font-size:13px; }
+  .continue-screen .cta-row{ justify-content:center; }
+
+  footer{ text-align:center; padding:40px 24px; color:var(--text-dim); font-size:11px; border-top:1px solid var(--line); }
+
+  @media (max-width:640px){ section{ padding:80px 20px; } }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+
+<div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+
+<div class="boot-screen" id="bootScreen">
+  <div class="boot-text" id="bootText"></div>
+</div>
+
+<header class="hero" id="profile">
+  <div class="hero-inner">
+    <p class="eyebrow">LEVEL 01 // PLAYER PROFILE</p>
+    <h1>DIBYAMAN<br>SAHOO</h1>
+    <p class="tagline">Software Engineering student building scalable backends and cloud infrastructure. Currently grinding XP in AWS, Python, and REST APIs.</p>
+    <div class="hero-meta">
+      <span class="tag live">STATUS: OPEN TO OPPORTUNITIES</span>
+      <span class="tag">BASE: Bhubaneswar, Odisha, IN</span>
+      <span class="tag">CLASS: Backend / Cloud</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://drive.google.com/file/d/1yi1pkGVmZuAFkqB86e8iMI6a8cKIaEoV/view?usp=drive_link" target="_blank" rel="noopener">⬇ DOWNLOAD SAVE FILE</a>
+      <a class="btn btn-ghost" href="#continue">CONNECT →</a>
+    </div>
+  </div>
+  <div class="scroll-hint">SCROLL TO CONTINUE ▼</div>
+</header>
+
+<nav class="level-select" id="levelSelect">
+  <a href="#profile" data-nav>01 PROFILE</a>
+  <a href="#skills" data-nav>02 SKILL TREE</a>
+  <a href="#quests" data-nav>03 QUEST LOG</a>
+  <a href="#achievements" data-nav>04 ACHIEVEMENTS</a>
+  <a href="#origin" data-nav>05 ORIGIN STORY</a>
+  <a href="#continue" data-nav>CONTINUE?</a>
+</nav>
+
+<section id="skills">
+  <p class="eyebrow">LEVEL 02</p>
+  <h2>SKILL TREE</h2>
+  <div class="skill-groups">
+    <div>
+      <div class="skill-group-label">LANGUAGES & WEB</div>
+      <div class="skill-grid">
+        <div class="skill-node"><div class="skill-node-top"><span>Python</span><span>LV.4</span></div><div class="skill-bar"><i style="width:80%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>Java</span><span>LV.3</span></div><div class="skill-bar"><i style="width:65%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>HTML / CSS</span><span>LV.4</span></div><div class="skill-bar"><i style="width:75%"></i></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">FRAMEWORKS</div>
+      <div class="skill-grid">
+        <div class="skill-node"><div class="skill-node-top"><span>Spring Boot</span><span>LV.3</span></div><div class="skill-bar"><i style="width:60%"></i></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">DATABASES</div>
+      <div class="skill-grid">
+        <div class="skill-node"><div class="skill-node-top"><span>MongoDB</span><span>LV.4</span></div><div class="skill-bar"><i style="width:78%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>MySQL</span><span>LV.3</span></div><div class="skill-bar"><i style="width:60%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>PostgreSQL</span><span>LV.2</span></div><div class="skill-bar"><i style="width:45%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>Oracle</span><span>LV.2</span></div><div class="skill-bar"><i style="width:40%"></i></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">CLOUD & DEVOPS</div>
+      <div class="skill-grid">
+        <div class="skill-node"><div class="skill-node-top"><span>AWS (EC2, S3, Lambda)</span><span>LV.4</span></div><div class="skill-bar"><i style="width:80%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>DevOps</span><span>LV.3</span></div><div class="skill-bar"><i style="width:55%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>REST APIs</span><span>LV.4</span></div><div class="skill-bar"><i style="width:78%"></i></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">TOOLS</div>
+      <div class="skill-grid">
+        <div class="skill-node"><div class="skill-node-top"><span>Git</span><span>LV.3</span></div><div class="skill-bar"><i style="width:65%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>Amazon CloudWatch</span><span>LV.3</span></div><div class="skill-bar"><i style="width:60%"></i></div></div>
+        <div class="skill-node"><div class="skill-node-top"><span>ROS</span><span>LV.2</span></div><div class="skill-bar"><i style="width:35%"></i></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="quests">
+  <p class="eyebrow">LEVEL 03</p>
+  <h2>QUEST LOG</h2>
+
+  <div class="quest-card">
+    <div class="quest-head">
+      <div>
+        <div class="quest-title">Cloud Computing Engineer Intern</div>
+        <div class="quest-sub">Devsindia · Remote · Jan 2024 – Oct 2024</div>
+      </div>
+      <span class="quest-status">COMPLETED</span>
+    </div>
+    <ul class="quest-objectives">
+      <li>Built a scalable web app on AWS EC2 hosting a Python backend</li>
+      <li>Configured Elastic Load Balancing and Auto Scaling for traffic spikes</li>
+      <li>Managed application data with MongoDB, stored static assets in S3</li>
+      <li>Shipped REST APIs in Python, monitored via Amazon CloudWatch</li>
+    </ul>
+  </div>
+
+  <div class="quest-card">
+    <div class="quest-head">
+      <div>
+        <div class="quest-title">Task Manager Web Application</div>
+        <div class="quest-sub">Personal Project · March 2024</div>
+      </div>
+      <span class="quest-status">COMPLETED</span>
+    </div>
+    <ul class="quest-objectives">
+      <li>Architected a full-stack app with secure sign-up / login</li>
+      <li>Built complete CRUD flow to manage, prioritize, and categorize tasks</li>
+      <li>Integrated MongoDB for low-latency persistent storage</li>
+      <li>Built a clean, responsive interface with HTML and CSS</li>
+    </ul>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="achievements">
+  <p class="eyebrow">LEVEL 04</p>
+  <h2>ACHIEVEMENTS UNLOCKED</h2>
+  <div class="ach-grid">
+    <a class="ach-card" href="https://drive.google.com/file/d/1Iz1juBGbGCWbi-4Y8nUDg2oYUMwb-o33/view" target="_blank" rel="noopener">
+      <div class="ach-icon">☁️</div>
+      <div class="ach-title">Cloud Computing Engineer</div>
+      <div class="ach-issuer">Internship & Training — Devsindia</div>
+      <div class="ach-link">View certificate</div>
+    </a>
+    <a class="ach-card" href="https://www.udemy.com/certificate/UC-7d16d08c-17b3-4d55-88ff-64d0d27246c9/" target="_blank" rel="noopener">
+      <div class="ach-icon">🐍</div>
+      <div class="ach-title">Python for Beginners</div>
+      <div class="ach-issuer">Udemy Certification</div>
+      <div class="ach-link">View certificate</div>
+    </a>
+    <a class="ach-card" href="https://www.geeksforgeeks.org/certificate/65a139c7fecfee4b0bbc7db2a43693a1" target="_blank" rel="noopener">
+      <div class="ach-icon">🍃</div>
+      <div class="ach-title">MongoDB Developer's Toolkit</div>
+      <div class="ach-issuer">CRUD Mastery with Java — GeeksforGeeks</div>
+      <div class="ach-link">View certificate</div>
+    </a>
+    <a class="ach-card" href="https://pwskills.com/learn/certificate/3da7205b-6891-41fe-b023-54cd3252b555/" target="_blank" rel="noopener">
+      <div class="ach-icon">⚙️</div>
+      <div class="ach-title">Backend Development</div>
+      <div class="ach-issuer">Professional Course — PW</div>
+      <div class="ach-link">View certificate</div>
+    </a>
+    <a class="ach-card" href="https://www.geeksforgeeks.org/" target="_blank" rel="noopener">
+      <div class="ach-icon">📈</div>
+      <div class="ach-title">Digital Marketing</div>
+      <div class="ach-issuer">GeeksforGeeks Certified</div>
+      <div class="ach-link">View issuer</div>
+    </a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="origin">
+  <p class="eyebrow">LEVEL 05</p>
+  <h2>ORIGIN STORY</h2>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-role">B.Tech, Computer Science & Engineering</div>
+      <div class="tl-org">Centurion University of Technology & Management, Bhubaneswar</div>
+      <div class="tl-time">Jun 2022 – Present</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-role">Higher Secondary (12th Grade)</div>
+      <div class="tl-org">Rameswar Higher Secondary School, Bhadrak</div>
+      <div class="tl-time">Jan 2020 – Jan 2022</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-role">Secondary School (10th Grade)</div>
+      <div class="tl-org">B M Bagurai Nodal High School, Bhadrak</div>
+      <div class="tl-time">Jan 2015 – Jan 2020</div>
+    </div>
+  </div>
+</section>
+
+<section id="continue" class="continue-screen">
+  <p class="eyebrow">GAME OVER? NO — CONTINUE</p>
+  <h2>READY PLAYER RECRUITER</h2>
+  <p>Actively looking for opportunities in Cloud & Backend Engineering. Press a button to start a conversation.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="https://www.linkedin.com/in/dibyaman-sahoo" target="_blank" rel="noopener">🔗 CONNECT ON LINKEDIN</a>
+    <a class="btn btn-ghost" href="sahoodibyaman@gmail.com"
+    >📧 EMAIL</a>
+    <a class="btn btn-ghost" href="+919777968156">📞 CALL</a>
+  </div>
+</section>
+
+<footer>
+  DIBYAMAN SAHOO — BHUBANESWAR, ODISHA, INDIA · BUILT FOR CONTINUOUS DEPLOYMENT
+</footer>
+
+<script>
+  const bootLines = [
+    "> booting player_profile.exe",
+    "> loading skill_tree... OK",
+    "> loading quest_log... OK",
+    "> loading achievements... OK",
+    "> connecting to recruiter_network...",
+    "> welcome, DIBYAMAN SAHOO"
+  ];
+  const bootTextEl = document.getElementById('bootText');
+  const bootScreenEl = document.getElementById('bootScreen');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function hideBoot(){
+    bootScreenEl.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  if(reduceMotion){
+    hideBoot();
+  } else {
+    document.body.style.overflow = 'hidden';
+    let lineIndex = 0, charIndex = 0, output = "";
+    function typeBoot(){
+      if(lineIndex >= bootLines.length){
+        setTimeout(hideBoot, 500);
+        return;
+      }
+      const line = bootLines[lineIndex];
+      if(charIndex < line.length){
+        output += line[charIndex];
+        charIndex++;
+        bootTextEl.innerHTML = output + '<span class="boot-cursor"></span>';
+        setTimeout(typeBoot, 18);
+      } else {
+        output += "\n";
+        lineIndex++;
+        charIndex = 0;
+        setTimeout(typeBoot, 120);
+      }
+    }
+    setTimeout(typeBoot, 200);
+    setTimeout(hideBoot, 4000);
+  }
+
+  const xpFill = document.getElementById('xpFill');
+  function updateXp(){
+    const h = document.documentElement;
+    const scrolled = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+    xpFill.style.width = (isFinite(scrolled) ? scrolled : 0) + '%';
+  }
+  document.addEventListener('scroll', updateXp, { passive:true });
+  updateXp();
+
+  const navLinks = document.querySelectorAll('[data-nav]');
+  const sections = ['profile','skills','quests','achievements','origin','continue'].map(id => document.getElementById(id));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        navLinks.forEach(l => l.classList.remove('active'));
+        const match = document.querySelector('[data-nav][href="#' + entry.target.id + '"]');
+        if(match) match.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+
+</body>
+</html>
