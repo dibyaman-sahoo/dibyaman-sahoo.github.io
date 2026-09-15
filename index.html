@@ -719,6 +719,8 @@
     if (isSpike){
       lastSnapTime = now;
       micStatus.textContent = 'Snap detected';
+if (micStream) { micStream.getTracks().forEach(track => track.stop()); listening = false; }
+
       triggerEnterSequence();
     }
 
