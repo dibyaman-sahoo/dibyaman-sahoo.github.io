@@ -292,81 +292,17 @@
     <span class="dot2"></span> profile.json
   </div>
 
-  <div class="typing-line">developer = {</div>
-  <div class="typing-line">&nbsp;&nbsp;name: <span>"Dibyaman"</span>,</div>
-  <div class="typing-line">&nbsp;&nbsp;stack: [<span>"Java","Spring","AWS"</span>],</div>
-  <div class="typing-line">&nbsp;&nbsp;focus: <span>"full-stack + cloud"</span></div>
-  <div class="typing-line">}</div>
+   <div class="code-card">
+          <div>&gt; const developer = {</div>
+          <div>&nbsp;&nbsp;<span class="k">lang</span>: <span class="s">'Java'</span>,</div>
+          <div>&nbsp;&nbsp;<span class="k">stack</span>: <span class="s">'Spring Boot'</span>,</div>
+          <div>&nbsp;&nbsp;<span class="k">cloud</span>: <span class="s">'AWS'</span>,</div>
+          <div>&nbsp;&nbsp;<span class="k">focus</span>: <span class="s">'clean code'</span></div>
+          <div>}</div>
+        </div>
+      </div>
+    </div>
 </div>
-
-<style>
-  .typing-line {
-    opacity: 0;
-    width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    border-right: 2px solid transparent;
-  }
-
-  .typing-line.show {
-    opacity: 1;
-    width: 0;
-    border-right-color: currentColor;
-    animation: typing 1s steps(30, end) forwards;
-  }
-
-  .typing-line.done {
-    opacity: 1;
-    width: auto;
-    border-right-color: transparent;
-  }
-
-  @keyframes typing {
-    from {
-      width: 0;
-    }
-    to {
-      width: 100%;
-    }
-  }
-</style>
-
-<script>
-  const lines = document.querySelectorAll(".typing-line");
-
-  let currentLine = 0;
-
-  function typeNextLine() {
-    if (currentLine < lines.length) {
-      const line = lines[currentLine];
-
-      line.classList.add("show");
-
-      line.addEventListener("animationend", function handler() {
-        line.removeEventListener("animationend", handler);
-
-        line.classList.remove("done");
-        line.classList.add("done");
-
-        currentLine++;
-
-        setTimeout(typeNextLine, 200);
-      });
-    } else {
-      setTimeout(() => {
-        lines.forEach(line => {
-          line.classList.remove("done");
-        });
-
-        currentLine = 0;
-
-        setTimeout(typeNextLine, 500);
-      }, 2500);
-    }
-  }
-
-  typeNextLine();
-</script>
 
     </div>
   </div>
