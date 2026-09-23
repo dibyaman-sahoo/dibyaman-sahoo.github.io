@@ -1,5 +1,5 @@
 # Dibyaman Sahoo — Full-Stack Developer
 
-![Dibyaman Sahoo](portfolio-theme-banner.gif)
+![Dibyaman Sahoo](dibyaman-portfolio-banner-v2.svg)
 
 Full-stack developer — Java, Spring Boot, AWS.
