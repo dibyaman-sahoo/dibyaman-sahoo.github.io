@@ -279,6 +279,26 @@
   .cta-col .brut-btn{ width:fit-content; }
   .burst{ position:absolute; right:-26px; bottom:-26px; width:150px; height:150px; opacity:0.95; }
 
+      /* ===== CTA box: purple + animated grid lines (same as hero-left) ===== */
+.cta-col{
+  color:var(--white); position:relative; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center; padding:56px 44px;
+  background-color:var(--purple);
+  background-image:
+    linear-gradient(rgba(20,20,20,0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,20,20,0.45) 1px, transparent 1px);
+  background-size:26px 26px;
+  background-position:-1px -1px;
+  animation:heroGridDrift 16s linear infinite;
+}
+.cta-col > *{ position:relative; z-index:1; }
+.cta-col h2{
+  font-family:var(--display); font-weight:800; font-size:clamp(26px,3.4vw,36px);
+  text-transform:uppercase; line-height:1.08; letter-spacing:-0.5px; margin-bottom:28px; max-width:9ch;
+}
+.cta-col .brut-btn{ width:fit-content; }
+.cta-col .burst{ position:absolute; z-index:0; right:-26px; bottom:-26px; width:150px; height:150px; opacity:0.95; }
+
   /* ============ FOOTER ============ */
   footer.site-footer{
     display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
