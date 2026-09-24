@@ -287,7 +287,42 @@
 </style>
 </head>
 <body>
+<script>
+// Fullscreen toggle: F to enter/exit, Esc to exit (like YouTube)
+(function(){
+  "use strict";
 
+  function isTypingContext(el){
+    if (!el) return false;
+    var tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  function toggleFullscreen(){
+    if (!document.fullscreenElement) {
+      var el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (isTypingContext(document.activeElement)) return;
+
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleFullscreen();
+    } else if (e.key === 'Escape' && document.fullscreenElement) {
+      toggleFullscreen();
+    }
+  });
+})();
+</script>
 <div class="page">
 
   <header class="nav">
