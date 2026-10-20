@@ -278,7 +278,6 @@
     text-transform:uppercase; line-height:1.08; letter-spacing:-0.5px; margin-bottom:28px; max-width:9ch;
   }
   .cta-col .brut-btn{ width:fit-content; }
-  .burst{ position:absolute; right:-26px; bottom:-26px; width:150px; height:150px; opacity:0.95; }
 
       /* ===== CTA box: purple + animated grid lines (same as hero-left) ===== */
 .cta-col{
@@ -298,7 +297,6 @@
   text-transform:uppercase; line-height:1.08; letter-spacing:-0.5px; margin-bottom:28px; max-width:9ch;
 }
 .cta-col .brut-btn{ width:fit-content; }
-.cta-col .burst{ position:absolute; z-index:0; right:-26px; bottom:-26px; width:150px; height:150px; opacity:0.95; }
 
   /* ============ FOOTER ============ */
   footer.site-footer{
@@ -598,9 +596,6 @@
     <div class="cta-col" id="contact">
       <h2>Let's build something reliable together.</h2>
       <a class="brut-btn solid-lime" href="https://mail.google.com/mail/?view=cm&fs=1&to=sahoodibyaman@gmail.com&su=Hello%20Dibyaman" target="_blank" rel="noopener">Get In Touch →</a>
-      <svg class="burst" viewBox="0 0 100 100" fill="var(--pink)" stroke="var(--ink)" stroke-width="2.5">
-        <path d="M50 2 L58 30 L82 14 L66 38 L98 42 L66 50 L98 58 L66 62 L82 86 L58 70 L50 98 L42 70 L18 86 L34 62 L2 58 L34 50 L2 42 L34 38 L18 14 L42 30 Z"/>
-      </svg>
     </div>
   </section>
 
@@ -820,9 +815,8 @@
     ".skill-chip img{transform:translateZ(20px)}",
     ".skill-chip span{transform:translateZ(8px)}",
 
-    /* spinning 3D burst */
-    "@keyframes p3dSpin{from{transform:perspective(520px) rotateY(0deg)}to{transform:perspective(520px) rotateY(360deg)}}",
-    ".cta-col .burst{animation:p3dSpin 7s linear infinite}",
+    /* get-in-touch box: 3D canvas sits behind the text */
+    ".cta-col > canvas.p3d-cta{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}",
 
     /* scroll depth reveals */
     ".r3d{opacity:0;transform:perspective(1100px) translate3d(0,50px,-130px) rotateX(16deg);transform-origin:50% 0;transition:opacity .8s ease,transform .95s cubic-bezier(.2,.8,.2,1)}",
@@ -1117,8 +1111,12 @@
           cluster.add(wrap);
           logos.push({
             wrap: wrap, holder: holder,
-            a: (idx / L) * Math.PI * 2,
-            ph: Math.random() * 6.28
+            hx: 0, hy: 0, hz: (Math.random() - 0.5) * 1.2, has: false,
+            cx: 0, cy: 0, init: false,
+            ax: 0.35 + Math.random() * 0.55, ay: 0.35 + Math.random() * 0.55,
+            fx: 0.14 + Math.random() * 0.24, fy: 0.12 + Math.random() * 0.24,
+            ph: Math.random() * 6.28, ph2: Math.random() * 6.28,
+            par: 0.3 + Math.random() * 0.9
           });
           var key = (img.getAttribute("src") || "").split("/").pop().replace(/\.svg.*$/, "");
           var svgText = LOGO_SVG[key] || "";
@@ -1136,48 +1134,219 @@
         if ("IntersectionObserver" in window) {
           new IntersectionObserver(function (en) { visible = en[0].isIntersecting; }).observe(panel);
         }
+        var zone = { x0: 0, x1: 0, y0: 0, y1: 0 };   /* photo area logos must stay out of */
+        var bounds = { x: 4, y: 4 };                  /* how far logos may roam */
+
+        function inZone(x, y) { return x > zone.x0 && x < zone.x1 && y > zone.y0 && y < zone.y1; }
+
+        function layout() {
+          var w = panel.clientWidth, h = panel.clientHeight;
+          var halfH = Math.tan((hcam.fov * Math.PI) / 360) * hcam.position.z;
+          var halfW = halfH * hcam.aspect;
+          var ppu = h / (2 * halfH);
+          var pr = panel.getBoundingClientRect();
+          var m = SIZE * 0.5 + 0.12;
+          bounds.x = halfW - SIZE * 0.5 - 0.1;
+          bounds.y = halfH - SIZE * 0.5 - 0.1;
+          var stage = panel.querySelector(".photo-stage");
+          if (stage) {
+            var l = 1e9, r = -1e9, t = 1e9, b = -1e9;
+            [stage].concat([].slice.call(stage.querySelectorAll("*"))).forEach(function (n) {
+              var q = n.getBoundingClientRect();
+              if (!q.width || !q.height) return;
+              l = Math.min(l, q.left); r = Math.max(r, q.right);
+              t = Math.min(t, q.top); b = Math.max(b, q.bottom);
+            });
+            if (r > l) {
+              zone.x0 = (l - pr.left - w / 2) / ppu - m;
+              zone.x1 = (r - pr.left - w / 2) / ppu + m;
+              zone.y0 = -(b - pr.top - h / 2) / ppu - m;
+              zone.y1 = -(t - pr.top - h / 2) / ppu + m;
+            }
+          }
+          /* keep homes that are still valid, give every other logo a fresh random spot */
+          var placed = [], minD = 1.5;
+          logos.forEach(function (o) {
+            if (o.has && Math.abs(o.hx) <= bounds.x && Math.abs(o.hy) <= bounds.y && !inZone(o.hx, o.hy)) {
+              placed.push({ x: o.hx, y: o.hy });
+            } else { o.has = false; }
+          });
+          logos.forEach(function (o) {
+            if (o.has) return;
+            var best = null;
+            for (var pass = 0; pass < 10 && !best; pass++) {
+              for (var a = 0; a < 300; a++) {
+                var x = (Math.random() * 2 - 1) * bounds.x, y = (Math.random() * 2 - 1) * bounds.y;
+                if (inZone(x, y)) continue;
+                var ok = true;
+                for (var q = 0; q < placed.length; q++) {
+                  if (Math.hypot(placed[q].x - x, placed[q].y - y) < minD) { ok = false; break; }
+                }
+                if (ok) { best = { x: x, y: y }; break; }
+              }
+              if (!best) minD -= 0.1;
+            }
+            if (!best) best = { x: (Math.random() > 0.5 ? 1 : -1) * bounds.x, y: (Math.random() * 2 - 1) * bounds.y };
+            placed.push(best);
+            o.hx = best.x; o.hy = best.y; o.has = true;
+          });
+        }
+
         var hresize = function () {
           var w = panel.clientWidth, h = panel.clientHeight;
           hr.setSize(w, h, false);
           hcam.aspect = w / h;
           hcam.position.z = Math.max(10, 11.4 / hcam.aspect);
           hcam.updateProjectionMatrix();
+          layout();
         };
         hresize();
         window.addEventListener("resize", hresize);
+        window.addEventListener("load", hresize);
+        var pimg = panel.querySelector("img");
+        if (pimg && !pimg.complete) pimg.addEventListener("load", hresize);
+        if ("ResizeObserver" in window) {
+          var rt = 0;
+          new ResizeObserver(function () { clearTimeout(rt); rt = setTimeout(hresize, 120); }).observe(panel);
+        }
 
-        /* Logos no longer orbit. Each one keeps a fixed spot around the photo
-           and just floats gently there in slow motion. */
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+        /* Every logo wanders on its own random path around a random spot,
+           never over the photo, and drifts with the cursor (each one by a different amount). */
         loops.push(function (t, dt) {
           if (!visible) return;
-          var halfH = Math.tan((hcam.fov * Math.PI) / 360) * hcam.position.z;
-          var halfW = halfH * hcam.aspect;
-          var rx = halfW - SIZE * 0.8;
-          var ry = halfH - SIZE * 0.8;
-
-          /* parallax: light with a mouse, stronger on phones (finger drag / gyro) */
-          var gain = coarse ? 3 : 1;
-          cluster.rotation.y += (mouse.x * 0.06 * gain - cluster.rotation.y) * 0.05;
-          cluster.rotation.x += (mouse.y * 0.04 * gain - cluster.rotation.x) * 0.05;
-
           var tm = reduce ? 0 : t;
+          var gain = coarse ? 2 : 1;
           for (var k = 0; k < logos.length; k++) {
             var o = logos[k];
-            /* fixed home position + slow floating drift */
-            var hx = Math.cos(o.a) * rx;
-            var hy = Math.sin(o.a) * ry;
-            o.wrap.position.set(
-              hx + Math.sin(tm * 0.35 + o.ph) * 0.35,
-              hy + Math.cos(tm * 0.28 + o.ph * 1.3) * 0.4,
-              Math.sin(tm * 0.22 + o.ph) * 0.5
-            );
-            /* slow, gentle tilt */
-            o.holder.rotation.y = Math.sin(tm * 0.4 + o.ph) * 0.4;
-            o.holder.rotation.x = Math.cos(tm * 0.3 + o.ph) * 0.15;
+            var tx = o.hx + Math.sin(tm * o.fx + o.ph) * o.ax + mouse.x * o.par * 0.9 * gain;
+            var ty = o.hy + Math.cos(tm * o.fy + o.ph2) * o.ay - mouse.y * o.par * 0.7 * gain;
+            tx = clamp(tx, -bounds.x, bounds.x);
+            ty = clamp(ty, -bounds.y, bounds.y);
+            if (inZone(tx, ty)) {
+              var dl = tx - zone.x0, dr = zone.x1 - tx, db = ty - zone.y0, du = zone.y1 - ty;
+              var mn = Math.min(dl, dr, db, du);
+              if (mn === dl) tx = zone.x0; else if (mn === dr) tx = zone.x1; else if (mn === db) ty = zone.y0; else ty = zone.y1;
+            }
+            if (!o.init) { o.cx = tx; o.cy = ty; o.init = true; }
+            o.cx += (tx - o.cx) * 0.07;
+            o.cy += (ty - o.cy) * 0.07;
+            o.wrap.position.set(o.cx, o.cy, o.hz + Math.sin(tm * 0.22 + o.ph) * 0.4);
+            o.holder.rotation.y = Math.sin(tm * 0.4 + o.ph) * 0.45 + mouse.x * 0.5 * o.par * gain;
+            o.holder.rotation.x = Math.cos(tm * 0.3 + o.ph) * 0.18 + mouse.y * 0.3 * o.par * gain;
           }
           hr.render(hs, hcam);
         });
       } catch (e2) { console.warn("hero logos failed", e2); }
+    }
+
+    /* ---- Get-in-touch box: a 3D paper plane gliding along a looping path, dotted trail behind it ---- */
+    var cta = document.querySelector(".cta-col");
+    if (cta) {
+      try {
+        var cc = document.createElement("canvas");
+        cc.className = "p3d-cta";
+        cta.insertBefore(cc, cta.firstChild);
+        var cr = new THREE.WebGLRenderer({ canvas: cc, alpha: true, antialias: true });
+        cr.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        var cs = new THREE.Scene();
+        var ccam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+        ccam.position.z = 10;
+        cs.add(new THREE.AmbientLight(0xffffff, 0.8));
+        var cl = new THREE.DirectionalLight(0xffffff, 0.85);
+        cl.position.set(-3, 5, 6);
+        cs.add(cl);
+
+        /* paper plane: nose N, tail spine S, raised wing tips WL / WR, keel K */
+        var PN = [1.5, 0, 0], PS = [-0.9, 0.04, 0], PWL = [-0.9, 0.4, -1.0], PWR = [-0.9, 0.4, 1.0], PK = [-0.9, -0.36, 0];
+        var tris = [PN, PS, PWL, PN, PWR, PS, PN, PK, PS];
+        var pos = new Float32Array(27);
+        tris.forEach(function (v, i) { pos[i * 3] = v[0]; pos[i * 3 + 1] = v[1]; pos[i * 3 + 2] = v[2]; });
+        var pg = new THREE.BufferGeometry();
+        pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        pg.addGroup(0, 3, 0); pg.addGroup(3, 3, 1); pg.addGroup(6, 3, 2);
+        pg.computeVertexNormals();
+        function pm(c) { return new THREE.MeshStandardMaterial({ color: c, flatShading: true, side: THREE.DoubleSide, roughness: 0.6 }); }
+        var plane = new THREE.Group();
+        plane.add(new THREE.Mesh(pg, [pm(0xD3F238), pm(0xF2EFE4), pm(0xFF6FA3)]));
+        var inkMat = new THREE.MeshBasicMaterial({ color: 0x141414 });
+        function edge(a, b) {
+          var va = new THREE.Vector3(a[0], a[1], a[2]), vb = new THREE.Vector3(b[0], b[1], b[2]);
+          var cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, va.distanceTo(vb), 6), inkMat);
+          cyl.position.copy(va).add(vb).multiplyScalar(0.5);
+          cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vb.clone().sub(va).normalize());
+          plane.add(cyl);
+        }
+        edge(PN, PS); edge(PN, PWL); edge(PN, PWR); edge(PN, PK); edge(PS, PWL); edge(PS, PWR); edge(PS, PK);
+        plane.scale.setScalar(0.85);
+        var pilot = new THREE.Group();
+        pilot.add(plane);
+        cs.add(pilot);
+
+        /* dotted trail */
+        var TRAIL = 30, dots = [];
+        var dotGeo = new THREE.SphereGeometry(0.07, 8, 8);
+        var dotMat = new THREE.MeshBasicMaterial({ color: 0xF2EFE4 });
+        for (var di = 0; di < TRAIL; di++) {
+          var dm = new THREE.Mesh(dotGeo, dotMat);
+          cs.add(dm);
+          dots.push(dm);
+        }
+
+        var cvisible = true;
+        if ("IntersectionObserver" in window) {
+          new IntersectionObserver(function (en) { cvisible = en[0].isIntersecting; }).observe(cta);
+        }
+        var cresize = function () {
+          var w = cta.clientWidth, h = cta.clientHeight;
+          cr.setSize(w, h, false);
+          ccam.aspect = w / h;
+          ccam.position.z = Math.max(10, 11 / ccam.aspect);
+          ccam.updateProjectionMatrix();
+        };
+        cresize();
+        window.addEventListener("resize", cresize);
+        window.addEventListener("load", cresize);
+        if ("ResizeObserver" in window) new ResizeObserver(cresize).observe(cta);
+
+        var pcx = 0, pcy = 0, pax = 1, pay = 1;
+        function flight(tt) {
+          return {
+            x: pcx + Math.sin(tt * 0.55) * pax + Math.sin(tt * 1.3 + 1.2) * pax * 0.14,
+            y: pcy + Math.sin(tt * 0.9 + 0.8) * pay + Math.sin(tt * 1.7) * pay * 0.1
+          };
+        }
+        function wrapAngle(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+
+        loops.push(function (t) {
+          if (!cvisible) return;
+          var tm = reduce ? 0.6 : t;
+          var halfH = Math.tan((ccam.fov * Math.PI) / 360) * ccam.position.z;
+          var halfW = halfH * ccam.aspect;
+          /* path sits to the right / lower part of the box, away from the heading and button; cursor nudges it */
+          pcx = halfW * 0.28 + mouse.x * 0.6;
+          pcy = -halfH * 0.05 - mouse.y * 0.4;
+          pax = halfW * 0.42;
+          pay = halfH * 0.36;
+          var p = flight(tm), p0 = flight(tm - 0.03), p1 = flight(tm + 0.12);
+          var h0 = Math.atan2(p.y - p0.y, p.x - p0.x);
+          var h1 = Math.atan2(p1.y - p.y, p1.x - p.x);
+          var turn = wrapAngle(h1 - h0);
+          pilot.position.set(p.x, p.y + Math.sin(tm * 1.6) * 0.08, Math.sin(tm * 0.7) * 0.7);
+          pilot.rotation.z = h0;
+          plane.rotation.x = 1.15 - Math.max(-0.7, Math.min(0.7, turn * 5)) + Math.sin(tm * 1.3) * 0.08;
+          plane.rotation.y = mouse.x * 0.25;
+          for (var i = 0; i < TRAIL; i++) {
+            var q = flight(tm - (i + 1) * 0.1);
+            var d = dots[i];
+            d.visible = i % 2 === 0;
+            d.position.set(q.x, q.y, pilot.position.z * (1 - (i + 1) / TRAIL));
+            d.scale.setScalar(Math.max(0.15, 1 - i / TRAIL));
+          }
+          cr.render(cs, ccam);
+        });
+      } catch (e5) { console.warn("contact plane failed", e5); }
     }
 
     if (!loops.length) return;
