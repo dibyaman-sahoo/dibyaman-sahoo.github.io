@@ -399,6 +399,16 @@
   }
   .cur-ring.hot{ background:rgba(255,111,163,.35); }
   .cur-dot.hot{ background:var(--pink); }
+
+  /* ============ PROJECT SWIPE ============ */
+  .proj-swipe{ touch-action:pan-y; position:relative; }
+  .proj-swipe.dragging{ user-select:none; -webkit-user-select:none; }
+  .proj-swipe a, .proj-swipe svg{ -webkit-user-drag:none; user-drag:none; }
+  .swipe-hint{
+    text-align:center; font-family:var(--mono); font-size:10.5px; letter-spacing:.6px;
+    text-transform:uppercase; color:#57544a; margin-top:14px;
+  }
+  [data-theme="dark"] .swipe-hint{ color:#B9B6AB; }
 </style>
 </head>
 <body>
@@ -1543,6 +1553,115 @@
   else boot();
 })();
 
+</script>
+<script>
+/* Project carousel: swipe on touch, click-and-drag with mouse, two-finger swipe on trackpad */
+(function(){
+  "use strict";
+  var card = document.querySelector(".proj-card");
+  var next = document.getElementById("nextProj");
+  var prev = document.getElementById("prevProj");
+  var dots = document.getElementById("projDots");
+  if (!card || !next || !prev) return;
+
+  var wrap = document.createElement("div");
+  wrap.className = "proj-swipe";
+  card.parentNode.insertBefore(wrap, card);
+  wrap.appendChild(card);
+
+  var sx = 0, sy = 0, dx = 0, id = null, t0 = 0;
+  var dragging = false, decided = false, moved = false, busy = false;
+
+  function setX(x, anim){
+    wrap.style.transition = anim ? "transform .22s ease, opacity .22s ease" : "none";
+    if (!x){ wrap.style.transform = ""; wrap.style.opacity = ""; return; }
+    var w = Math.max(wrap.offsetWidth, 1);
+    wrap.style.transform = "translateX(" + x + "px) rotate(" + (x * 0.02).toFixed(2) + "deg)";
+    wrap.style.opacity = String(Math.max(0.35, 1 - Math.abs(x) / w * 0.9));
+  }
+
+  function go(dir){            /* 1 = next project, -1 = previous */
+    if (busy) return;
+    busy = true;
+    setX(-dir * wrap.offsetWidth * 0.6, true);
+    setTimeout(function(){
+      wrap.style.transition = "none";
+      wrap.style.transform = "";
+      wrap.style.opacity = "";
+      (dir > 0 ? next : prev).click();   /* re-renders + plays the 3D flip-in */
+      busy = false;
+    }, 200);
+  }
+
+  wrap.addEventListener("pointerdown", function(e){
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (busy) return;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY;
+    dx = 0; dragging = false; decided = false; moved = false; t0 = performance.now();
+  });
+
+  wrap.addEventListener("pointermove", function(e){
+    if (e.pointerId !== id) return;
+    var mx = e.clientX - sx, my = e.clientY - sy;
+    if (!decided){
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
+      decided = true;
+      if (Math.abs(mx) > Math.abs(my)){
+        dragging = true; moved = true;
+        wrap.classList.add("dragging");
+        card.style.transform = "";          /* drop any hover/touch tilt while dragging */
+        try { wrap.setPointerCapture(id); } catch(_){}
+      } else { id = null; return; }          /* vertical gesture: let the page scroll */
+    }
+    if (!dragging) return;
+    dx = mx;
+    setX(dx, false);
+  });
+
+  function end(e){
+    if (e.pointerId !== id) return;
+    var was = dragging;
+    var v = Math.abs(dx) / Math.max(1, performance.now() - t0);
+    id = null; dragging = false;
+    wrap.classList.remove("dragging");
+    if (!was) return;
+    if (Math.abs(dx) > 60 || (v > 0.5 && Math.abs(dx) > 25)) go(dx < 0 ? 1 : -1);
+    else setX(0, true);
+  }
+  wrap.addEventListener("pointerup", end);
+  wrap.addEventListener("pointercancel", end);
+
+  /* a drag should never count as a click on the Live Demo / Source buttons */
+  wrap.addEventListener("click", function(e){
+    if (moved){ e.preventDefault(); e.stopPropagation(); moved = false; }
+  }, true);
+  wrap.addEventListener("dragstart", function(e){ e.preventDefault(); });
+  wrap.addEventListener("selectstart", function(e){ if (dragging) e.preventDefault(); });
+  wrap.addEventListener("touchmove", function(e){ if (dragging) e.stopPropagation(); }, { capture:true, passive:true });
+
+  /* trackpad / horizontal wheel swipe */
+  var acc = 0, cool = false, wt = 0;
+  wrap.addEventListener("wheel", function(e){
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    e.preventDefault();                       /* also stops the browser's back/forward swipe */
+    if (cool || busy) return;
+    acc += e.deltaX;
+    if (Math.abs(acc) > 60){
+      go(acc > 0 ? 1 : -1);
+      acc = 0; cool = true;
+      setTimeout(function(){ cool = false; }, 700);
+    }
+    clearTimeout(wt);
+    wt = setTimeout(function(){ acc = 0; }, 200);
+  }, { passive:false });
+
+  if (dots){
+    var hint = document.createElement("div");
+    hint.className = "swipe-hint";
+    hint.textContent = matchMedia("(pointer: coarse)").matches ? "\u2190 Swipe to browse \u2192" : "\u2190 Drag or swipe to browse \u2192";
+    dots.parentNode.insertBefore(hint, dots);
+  }
+})();
 </script>
 <script>
 /* Custom design cursor: lime square dot + lagging outline square (desktop pointers only) */
