@@ -19,8 +19,7 @@
     } catch(e){}
   })();
 </script>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' stroke='%23141414' stroke-width='2'%3E%3Canimate attributeName='fill' values='%237360F2;%23FF6FA3;%23D3F238;%237360F2' dur='4s' repeatCount='indefinite'/%3E%3C/circle%3E%3Ctext x='32' y='34' text-anchor='middle' dominant-baseline='central' font-family='Space Grotesk, Arial, sans-serif' font-weight='800' font-size='24' fill='%23141414'%3E%3Canimate attributeName='fill' values='%23D3F238;%23141414;%23141414;%23D3F238' dur='4s' repeatCount='indefinite'/%3EDS%3C/text%3E%3C/svg%3E" />
-<link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%237360F2' stroke='%23141414' stroke-width='2'/%3E%3Ctext x='32' y='34' text-anchor='middle' dominant-baseline='central' font-family='Space Grotesk, Arial, sans-serif' font-weight='800' font-size='24' fill='%23D3F238'%3EDS%3C/text%3E%3C/svg%3E">
+<link id="favicon" rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%237360F2' stroke='%23141414' stroke-width='3'/%3E%3Ctext x='32' y='34' text-anchor='middle' dominant-baseline='central' font-family='Arial, sans-serif' font-weight='800' font-size='24' fill='%23D3F238'%3EDS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -383,6 +382,52 @@
 </style>
 </head>
 <body>
+<script>
+/* Animated tab icon: redrawn on a canvas and swapped into the favicon link */
+(function(){
+  "use strict";
+  try {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var link = document.getElementById("favicon");
+    if (!link) return;
+    var S = 64, cv = document.createElement("canvas");
+    cv.width = cv.height = S;
+    var g = cv.getContext("2d");
+    if (!g) return;
+    var pal = [[115,96,242],[255,111,163],[211,242,56]];   /* purple, pink, lime */
+    function mix(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+    function rgb(c){ return "rgb("+(c[0]|0)+","+(c[1]|0)+","+(c[2]|0)+")"; }
+    var t0 = performance.now();
+    function draw(){
+      var t = (performance.now()-t0)/1000;
+      var ph = (t/1.6) % pal.length, i = Math.floor(ph), f = ph-i;
+      f = f*f*(3-2*f);
+      var bg = mix(pal[i], pal[(i+1)%pal.length], f);
+      var fg = (i===2 && f<0.5) || (i===1 && f>0.5) ? [20,20,20] : [211,242,56];
+      g.clearRect(0,0,S,S);
+      /* pulsing disc */
+      var r = 27 + Math.sin(t*3.2)*2.2;
+      g.beginPath(); g.arc(32,32,r,0,Math.PI*2);
+      g.fillStyle = rgb(bg); g.fill();
+      g.lineWidth = 3.5; g.strokeStyle = "#141414"; g.stroke();
+      /* orbiting dot */
+      var a = t*4.2;
+      g.beginPath(); g.arc(32+Math.cos(a)*27, 32+Math.sin(a)*27, 5, 0, Math.PI*2);
+      g.fillStyle = "#FF6FA3"; g.fill();
+      g.lineWidth = 2.5; g.strokeStyle = "#141414"; g.stroke();
+      /* bouncing initials */
+      var bounce = Math.abs(Math.sin(t*3.2))*3;
+      g.font = "800 26px Arial, sans-serif";
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillStyle = rgb(i===0 && f<0.5 ? [211,242,56] : fg);
+      g.fillText("DS", 32, 34-bounce+1.5);
+      link.href = cv.toDataURL("image/png");
+    }
+    draw();
+    setInterval(draw, 90);
+  } catch(e){}
+})();
+</script>
 <script>
 // Fullscreen toggle: F key, Esc key (desktop) + double-tap (mobile) — like YouTube
 (function(){
