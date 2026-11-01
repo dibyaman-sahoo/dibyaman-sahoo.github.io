@@ -379,11 +379,31 @@
   body, .page, .brut-btn, .cert-card, .proj-card, header.nav, .skills-row, .skills-groups, .timeline{
     transition:background-color .3s ease, color .3s ease, border-color .3s ease;
   }
+
+  /* ============ CUSTOM CURSOR ============ */
+  html.has-cursor, html.has-cursor *{ cursor:none !important; }
+  .cur-dot, .cur-ring{
+    position:fixed; left:0; top:0; z-index:100000; pointer-events:none;
+    opacity:0; transition:opacity .2s ease;
+    will-change:transform;
+  }
+  .cur-on .cur-dot, .cur-on .cur-ring{ opacity:1; }
+  .cur-dot{
+    width:10px; height:10px; margin:-5px 0 0 -5px;
+    background:var(--lime); border:2px solid var(--ink);
+  }
+  .cur-ring{
+    width:36px; height:36px; margin:-18px 0 0 -18px;
+    border:2px solid var(--ink); background:transparent;
+    transition:opacity .2s ease, background-color .2s ease;
+  }
+  .cur-ring.hot{ background:rgba(255,111,163,.35); }
+  .cur-dot.hot{ background:var(--pink); }
 </style>
 </head>
 <body>
 <script>
-/* Animated tab icon: redrawn on a canvas and swapped into the favicon link */
+/* Tab icon: dark rounded tile, lime monogram, one softly pulsing status dot */
 (function(){
   "use strict";
   try {
@@ -394,37 +414,28 @@
     cv.width = cv.height = S;
     var g = cv.getContext("2d");
     if (!g) return;
-    var pal = [[115,96,242],[255,111,163],[211,242,56]];   /* purple, pink, lime */
-    function mix(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
-    function rgb(c){ return "rgb("+(c[0]|0)+","+(c[1]|0)+","+(c[2]|0)+")"; }
+    function rr(x,y,w,h,r){
+      g.beginPath();
+      g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+      g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+    }
     var t0 = performance.now();
     function draw(){
       var t = (performance.now()-t0)/1000;
-      var ph = (t/1.6) % pal.length, i = Math.floor(ph), f = ph-i;
-      f = f*f*(3-2*f);
-      var bg = mix(pal[i], pal[(i+1)%pal.length], f);
-      var fg = (i===2 && f<0.5) || (i===1 && f>0.5) ? [20,20,20] : [211,242,56];
+      var k = (Math.sin(t*Math.PI*2/2.8)+1)/2;          /* 0..1, one breath every 2.8s */
       g.clearRect(0,0,S,S);
-      /* pulsing disc */
-      var r = 27 + Math.sin(t*3.2)*2.2;
-      g.beginPath(); g.arc(32,32,r,0,Math.PI*2);
-      g.fillStyle = rgb(bg); g.fill();
-      g.lineWidth = 3.5; g.strokeStyle = "#141414"; g.stroke();
-      /* orbiting dot */
-      var a = t*4.2;
-      g.beginPath(); g.arc(32+Math.cos(a)*27, 32+Math.sin(a)*27, 5, 0, Math.PI*2);
-      g.fillStyle = "#FF6FA3"; g.fill();
-      g.lineWidth = 2.5; g.strokeStyle = "#141414"; g.stroke();
-      /* bouncing initials */
-      var bounce = Math.abs(Math.sin(t*3.2))*3;
-      g.font = "800 26px Arial, sans-serif";
+      rr(2,2,60,60,15); g.fillStyle = "#141414"; g.fill();
+      g.font = "800 27px Arial, sans-serif";
       g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillStyle = rgb(i===0 && f<0.5 ? [211,242,56] : fg);
-      g.fillText("DS", 32, 34-bounce+1.5);
+      g.fillStyle = "#D3F238";
+      g.fillText("DS", 32, 34);
+      g.beginPath(); g.arc(51,13,4.2+k*0.8,0,Math.PI*2);
+      g.globalAlpha = 0.45+k*0.55; g.fillStyle = "#FF6FA3"; g.fill();
+      g.globalAlpha = 1;
       link.href = cv.toDataURL("image/png");
     }
     draw();
-    setInterval(draw, 90);
+    setInterval(draw, 120);
   } catch(e){}
 })();
 </script>
@@ -1532,6 +1543,50 @@
   else boot();
 })();
 
+</script>
+<script>
+/* Custom design cursor: lime square dot + lagging outline square (desktop pointers only) */
+(function(){
+  "use strict";
+  if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  var root = document.documentElement;
+  var dot = document.createElement("div"); dot.className = "cur-dot";
+  var ring = document.createElement("div"); ring.className = "cur-ring";
+  document.body.appendChild(ring); document.body.appendChild(dot);
+  root.classList.add("has-cursor");
+
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var mx = -100, my = -100, rx = -100, ry = -100;
+  var sc = 1, scT = 1, rot = 0, rotT = 0, down = false, seen = false;
+  var HOT = "a, button, [role='button'], .cert-card, .proj-card, .skill-chip, .icon-btn, .brut-btn, .theme-toggle";
+
+  window.addEventListener("pointermove", function(e){
+    if (e.pointerType === "touch") return;
+    mx = e.clientX; my = e.clientY;
+    if (!seen){ seen = true; rx = mx; ry = my; root.classList.add("cur-on"); }
+  }, { passive:true });
+  document.addEventListener("pointerover", function(e){
+    var hot = !!(e.target.closest && e.target.closest(HOT));
+    ring.classList.toggle("hot", hot);
+    dot.classList.toggle("hot", hot);
+    scT = hot ? 1.55 : 1;
+    rotT = hot ? 45 : 0;
+  });
+  document.addEventListener("pointerdown", function(){ down = true; });
+  document.addEventListener("pointerup", function(){ down = false; });
+  document.documentElement.addEventListener("mouseleave", function(){ root.classList.remove("cur-on"); });
+  document.documentElement.addEventListener("mouseenter", function(){ if (seen) root.classList.add("cur-on"); });
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    var k = reduce ? 1 : 0.2;
+    rx += (mx - rx) * k; ry += (my - ry) * k;
+    var st = down ? scT * 0.75 : scT;
+    sc += (st - sc) * 0.2; rot += (rotT - rot) * 0.2;
+    dot.style.transform = "translate3d(" + mx + "px," + my + "px,0) rotate(" + rot + "deg)";
+    ring.style.transform = "translate3d(" + rx + "px," + ry + "px,0) rotate(" + rot + "deg) scale(" + sc.toFixed(3) + ")";
+  })();
+})();
 </script>
 </body>
 </html>
