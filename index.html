@@ -210,6 +210,9 @@
   .skill-chip{ display:flex; flex-direction:column; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; color:#3c3a33; }
   .skill-chip img{ width:26px; height:26px; }
 
+  /* AWS wordmark is wider than the other logos */
+  .skill-chip img[src*="amazonwebservices"]{ width:40px; height:26px; object-fit:contain; }
+
   .skills-groups{ flex:1; display:flex; flex-direction:column; gap:16px; padding:22px 32px; background:var(--white); min-width:260px; }
   .skill-group{ display:flex; align-items:center; gap:22px; row-gap:14px; flex-wrap:wrap; }
   .skill-group-label{ font-family:var(--mono); font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--purple); width:112px; flex-shrink:0; }
@@ -377,6 +380,14 @@
   [data-theme="dark"] footer.site-footer .logo{ background:var(--white); color:var(--ink); border-color:var(--ink); }
   [data-theme="dark"] .skill-group-label{ color:#A99CFF; }
   [data-theme="dark"] .cert-card:hover{ background:var(--white); }
+
+  /* dark mode: dark-coloured logos (AWS wordmark, GitHub) get a light backing so they stay visible */
+  [data-theme="dark"] .skill-chip img[src*="amazonwebservices"],
+  [data-theme="dark"] .skill-chip img[src*="github-original"]{
+    background:#F2EFE4;
+    border-radius:6px;
+    padding:3px;
+  }
 
   /* smooth switch */
   body, .page, .brut-btn, .cert-card, .proj-card, header.nav, .skills-row, .skills-groups, .timeline{
